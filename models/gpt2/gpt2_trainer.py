@@ -1,4 +1,4 @@
-from gpt2_model import GPTModel, GPTConfig
+from models.gpt2.gpt2_model import GPTModel, GPTConfig
 from utils.general_utils import Visualizer, MetricAccumulator, Timer, get_gpus, download_and_extract
 from utils.dataloaders import get_data_iter_for_gpt
 
@@ -27,14 +27,14 @@ def get_gpt_batch_loss(model, input_sequences, targets):
     return loss
 
 
-def train_gpt(model, train_iter, lr, num_epochs):
+def train_gpt(model, train_iter, learning_rate, num_epochs):
     if num_devices > 0:
         # Use parallel processing on multiple GPUs.
         model = nn.DataParallel(model, device_ids=devices).to(devices[0])
     else:
         # Still explicitly move model to device incase there is only one GPU.
         model.to(devices[0])
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     epoch, timer = 0, Timer()
     visualizer = Visualizer(xlabel="epoch", ylabel="loss",
                             xlim=[1, num_epochs])
@@ -68,5 +68,6 @@ def train_gpt(model, train_iter, lr, num_epochs):
     print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
 
 
-# Train model
-train_gpt(model, train_iter, lr=1e-6, num_epochs=2)
+# Train model in notebook
+def run_training(learning_rate=1e-6, num_epochs=10):
+    train_gpt(model, train_iter, learning_rate=learning_rate, num_epochs=num_epochs)
