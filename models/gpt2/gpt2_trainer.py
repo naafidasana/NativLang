@@ -11,7 +11,7 @@ DATA_DIR = "./data/dag-sents-train"
 
 # Get data torch data loaders and vocabulary
 context_length = 12
-batch_size = 32
+batch_size = 256
 train_iter, vocab = get_data_iter_for_gpt(DATA_DIR, context_length, batch_size)
 
 # Create model config and model
