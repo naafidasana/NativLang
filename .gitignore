@@ -2,3 +2,5 @@ __pychache__
 wiki_scraper.py
 .vscode
 preprocess.py
+cli.py
+setup.py

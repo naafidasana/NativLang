@@ -65,23 +65,6 @@ class CausalSelfAttention(nn.Module):
         out = self.out_dropout(self.o_W(out))
         return out
 
-    def transpose_(self, X):
-        # Shape of `X` (batch_size, seq_length, embed_dim)
-        # Reshape to allow for computing of multiple attention heads
-        batch_size = X.size(0)
-        seq_length = X.size(1)
-        X = X.reshape(batch_size, seq_length, self.num_heads, -1)
-
-        # New shape = (batch_size, num_heads, seq_length, head_dim)
-        return X
-
-    def transpose_out(self, X):
-        # Shape of `X` (batch_size, num_heads, seq_length, seq_length)
-        shape = X.shape
-        X = X.transpose(1, 2)
-        X = X.reshape(shape[0], shape[2], -1)
-        return X
-
 
 class FeedForwardNet(nn.Module):
 

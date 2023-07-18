@@ -34,13 +34,9 @@ class Vocabulary:
     def __len__(self):
         return len(self.ndx_to_token)
 
-    def encode(self, seq):
-        if isinstance(seq, str):
-            seq = tokenize(seq)
-            return self.__getitem__(seq)
+    def encode(self, seq: list):
         return self.__getitem__(seq)
 
-        return ndxs
 
     def decode(self, ndxs: list):
         if not isinstance(ndxs, (list, tuple)):
@@ -65,9 +61,11 @@ def count_corpus(tokens: list):
 
 def tokenize(lines: list, method="word"):
     """Break sentences down into a list of tokens."""
+    if not isinstance(lines, (list, tuple)):
+        lines = [lines]
 
     if method == "word":
-        tokens = [line.split() for line in lines]
+        tokens = [line.lower().split() for line in lines]
     elif method == "char":
         tokens = [list(line) for line in lines]
     elif method == "bpe":

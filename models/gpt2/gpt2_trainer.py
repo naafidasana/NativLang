@@ -1,6 +1,7 @@
 from models.gpt2.gpt2_model import GPTModel, GPTConfig
 from utils.general_utils import Visualizer, MetricAccumulator, Timer, get_gpus, download_and_extract
 from utils.dataloaders import get_data_iter_for_gpt
+from utils.tokenizer import tokenize
 
 import torch
 import torch.nn as nn
@@ -19,6 +20,14 @@ config = GPTConfig(len(vocab), context_length)
 model = GPTModel(config)
 
 devices, num_devices = get_gpus()
+
+
+def grad_clipping(model, theta):
+    params = [p for p in model.parameters() if p.requires_grad()]
+    norm = torch.sqrt(sum(torch.sum((p.grad ** 2) for p in params)))
+    if norm > theta:
+        for param in params:
+            param.grad[:] *= theta / norm
 
 
 def get_gpt_batch_loss(model, input_sequences, targets):
@@ -56,6 +65,7 @@ def train_gpt(model, train_iter, learning_rate, num_epochs):
 
             # Backward pass
             loss.backward()
+            grad_clipping(model, 1)
             optimizer.step()
             metrics.add(loss,
                         batch_xs.shape[0], 1)
