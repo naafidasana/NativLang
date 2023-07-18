@@ -180,7 +180,7 @@ class GPTModel(nn.Module):
         checkpoint_name = os.path.join(checkpoint_path, f"{name}.pth")
         
         # Save model
-        torch.save(self.state_dict(), checkpoint_name)
+        torch.save(self.module.state_dict(), checkpoint_name)
 
     @classmethod
     def from_pretrained(cls, name, config):
