@@ -11,7 +11,7 @@ DATA_DIR = "./data/dag-sents-train"
 
 # Get data torch data loaders and vocabulary
 context_length = 12
-batch_size = 32
+batch_size = 256
 train_iter, vocab = get_data_iter_for_gpt(DATA_DIR, context_length, batch_size)
 
 # Create model config and model
@@ -84,5 +84,3 @@ def train_gpt(model, train_iter, learning_rate, num_epochs):
 # Train model in notebook
 def run_training(learning_rate=1e-4, num_epochs=10):
     train_gpt(model, train_iter, learning_rate=learning_rate, num_epochs=num_epochs)
-
-run_training()
