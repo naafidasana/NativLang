@@ -104,9 +104,11 @@ def try_generate(model, max_tokens=10):
     seq = "doo maa chanila daa ni"
     # Encode sequence
     encoded_seq = vocab.encode(tokenize(seq))
-    encoded_seq = torch.tensor(encoded_seq).unsqueeze(0).to(devices[0])
+    encoded_seq = torch.tensor(encoded_seq).to(devices[0])
     with torch.no_grad():
         gen_seq = model.module.generate(encoded_seq, max_tokens)
         gen_seq = gen_seq.cpu().numpy().tolist()[0]
         # Decode generated sequence
         print(vocab.decode(gen_seq))
+
+try_generate(model)
