@@ -6,6 +6,8 @@ from utils.tokenizer import tokenize
 import torch
 import torch.nn as nn
 
+import os
+
 # Download (or fetched cached dataset) and obtain path to dataset
 DATA_DIR = "./data/dag-sents-train"
 
@@ -36,6 +38,13 @@ def get_gpt_batch_loss(model, input_sequences, targets):
 
 
 def train_gpt(model, train_iter, learning_rate, num_epochs):
+    
+    # Add code to enable checkpointing
+    checkpoint_path = "./checkpoints"
+    if not os.path.exists(checkpoint_path):
+        os.mkdir(checkpoint_path)
+
+    # Get and move model to device.
     if num_devices > 0:
         # Use parallel processing on multiple GPUs.
         model = nn.DataParallel(model, device_ids=devices).to(devices[0])
@@ -73,9 +82,11 @@ def train_gpt(model, train_iter, learning_rate, num_epochs):
 
         epoch += 1
 
-        # Save model after every five epochs
-        if (epoch % 5 == 0):
-            model.save(f"dagpt-{epoch:03}.pth")
+        # Save model after every two epochs
+        if (epoch % 2 == 0):
+            checkpoint_name = os.path.join(checkpoint_path, f"dagpt-{epoch:03}.pth")
+            # Save model
+            torch.save(model.module.state_dict(), checkpoint_name)
 
         print(f"Loss: {metrics[0]/metrics[2]:.4f}")
         print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
