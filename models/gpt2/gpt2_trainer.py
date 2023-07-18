@@ -70,7 +70,6 @@ def train_gpt(model, train_iter, learning_rate, num_epochs):
                         batch_xs.shape[0], 1)
             timer.stop()
             visualizer.add(epoch + 1, metrics[0]/metrics[2])
-            break
 
         epoch += 1
 
