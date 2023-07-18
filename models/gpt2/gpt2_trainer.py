@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 # Download (or fetched cached dataset) and obtain path to dataset
-DATA_DIR = ".data/dag-sents-train"
+DATA_DIR = "./data/dag-sents-train"
 
 # Get data torch data loaders and vocabulary
 context_length = 12
