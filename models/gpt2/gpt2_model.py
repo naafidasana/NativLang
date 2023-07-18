@@ -5,6 +5,8 @@ import math
 
 from dataclasses import dataclass
 
+import os
+
 
 @dataclass
 class GPTConfig:
@@ -170,3 +172,23 @@ class GPTModel(nn.Module):
             # Append generated token to original sequence
             input_seq = torch.cat((input_seq, nxt_token_ndx), dim=1)
         return input_seq
+
+    def save(self, name):
+        checkpoint_path = "./checkpoints"
+        if not os.path.exists(checkpoint_path):
+            os.mkdir(checkpoint_path)
+        checkpoint_name = os.path.join(checkpoint_path, f"{name}.pth")
+        
+        # Save model
+        torch.save(self.state_dict(), checkpoint_name)
+
+    @classmethod
+    def from_pretrained(cls, name, config):
+        # Create instance of model
+        model = cls(config)
+
+        # Get checkpoint path and load pretrained model.
+        checkpoint_path = os.path.join("./checkpoints", f"{name}.pth")
+        model.load_state_dict(torch.load(checkpoint_path))
+        
+        return model

@@ -6,13 +6,12 @@ from utils.tokenizer import tokenize
 import torch
 import torch.nn as nn
 
-
 # Download (or fetched cached dataset) and obtain path to dataset
-DATA_DIR = "./data/dag-sents-train"
+DATA_DIR = r"C:\Users\Technotron\Code\NativLang\data\dag-sents-train"
 
 # Get data torch data loaders and vocabulary
 context_length = 12
-batch_size = 256
+batch_size = 32
 train_iter, vocab = get_data_iter_for_gpt(DATA_DIR, context_length, batch_size)
 
 # Create model config and model
@@ -33,7 +32,7 @@ def grad_clipping(model, theta):
 def get_gpt_batch_loss(model, input_sequences, targets):
     # Loss is also calculated in the forward pass of the model
     logits, loss = model(input_sequences, targets)
-    return loss
+    return loss.sum()
 
 
 def train_gpt(model, train_iter, learning_rate, num_epochs):
@@ -65,19 +64,26 @@ def train_gpt(model, train_iter, learning_rate, num_epochs):
 
             # Backward pass
             loss.backward()
-            grad_clipping(model, 1)
+            #grad_clipping(model, 1)
             optimizer.step()
             metrics.add(loss,
                         batch_xs.shape[0], 1)
             timer.stop()
             visualizer.add(epoch + 1, metrics[0]/metrics[2])
+            break
 
         epoch += 1
 
-    print(f"Loss: {metrics[0]/metrics[2]:.4f}")
-    print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
+        # Save model after every five epochs
+        if (epoch % 5 == 0):
+            model.save(f"dagpt-{epoch:03}.pth")
+
+        print(f"Loss: {metrics[0]/metrics[2]:.4f}")
+        print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
 
 
 # Train model in notebook
-def run_training(learning_rate=1e-6, num_epochs=10):
+def run_training(learning_rate=1e-4, num_epochs=10):
     train_gpt(model, train_iter, learning_rate=learning_rate, num_epochs=num_epochs)
+
+run_training()
