@@ -106,9 +106,10 @@ def try_generate(model, max_tokens=10):
     encoded_seq = vocab.encode(tokenize(seq))
     encoded_seq = torch.tensor(encoded_seq).to(devices[0])
     with torch.no_grad():
-        gen_seq = model.module.generate(encoded_seq, max_tokens)
+        try:
+            gen_seq = model.module.generate(encoded_seq, max_tokens)
+        except:
+            gen_seq = model.generate(encoded_seq, max_tokens)
         gen_seq = gen_seq.cpu().numpy().tolist()[0]
         # Decode generated sequence
         print(vocab.decode(gen_seq))
-
-try_generate(model)
