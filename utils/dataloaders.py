@@ -3,7 +3,7 @@ import os
 
 import torch
 
-from utils.tokenizer import Vocabulary, tokenize
+from utils.tokenizer import Vocabulary, BPETokenizer, tokenize
 
 
 # Helper functions to load data for BERT model
@@ -183,66 +183,30 @@ def get_data_iter_for_bert(data_dir, batch_size, context_length):
 
 # Helper functions to load data for GPT model
 
-def read_data_for_gpt(data_dir):
+def read_data_for_gpt(data_dir, in_lower=False):
     filename = os.path.join(data_dir, "dag-sents-train.txt")
     with open(filename, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    lines = [line.lower().strip() for line in lines]
-    return lines
+        text = f.read()
+    if in_lower:
+        return text.lower().strip()
+    return text.strip()
 
 
-def get_input_sequence_and_next_token(sentences, context_length):
-    xs, ys = [], []
-    # Get random start ndx
-    i = 0
+def encode_sequence_for_gpt(text):
+    # Fetch pretrained tokenizer
+    dagpt_tokenizer = BPETokenizer.from_pretrained("configs/dagpt-base-uncased-tokenizer.json")
+    enc_text = dagpt_tokenizer.encode(text)
+    return enc_text
 
-    # `xs`->input sequence, ys->target (next )token
-    xs.append(sentences[i:i+context_length])
-    ys.append(sentences[i+1:i+1+context_length])
-    return xs, ys
-
-
-def pad_gpt_inputs(input_sequence, context_length):
-    if len(input_sequence) > context_length:
-        pad_sequence = input_sequence[:context_length]
-    else:
-        pad_sequence = input_sequence + ["<pad>"] * (context_length - len(input_sequence))
-    return pad_sequence
-
-
-class DatasetForGPTModel(torch.utils.data.Dataset):
-
-    def __init__(self, sentences, context_length):
-        self.xs, self.ys = [], []
-        # Tokenize sentences and build vocabulary.
-        tokens_list = tokenize(sentences)
-        self.vocab = Vocabulary(tokens_list, min_freq=5, reserved_tokens=[
-            "<sos>", "<eos>", "<pad>"
-        ])
-        
-        # Pad tokenized sentences to uniform length in and put in tokens_list
-        tokens_list = [pad_gpt_inputs(
-            tokens, context_length+1) for tokens in tokens_list]
-        # Enocde sentences into token ids
-        tokens_list = [self.vocab.encode(sent) for sent in tokens_list]
-
-        for tokens in tokens_list:
-            xs, ys = get_input_sequence_and_next_token(tokens, context_length)
-            self.xs.extend(xs)
-            self.ys.extend(ys)
-        self.xs = torch.tensor(self.xs, dtype=torch.int64)
-        self.ys = torch.tensor(self.ys, dtype=torch.int64)        
-
-    def __getitem__(self, ndx):
-        return (self.xs[ndx], self.ys[ndx])
-
-    def __len__(self):
-        return len(self.xs)
-
-
-def get_data_iter_for_gpt(data_dir, context_length, batch_size=32):
-    sentences = read_data_for_gpt(data_dir)
-    train_set = DatasetForGPTModel(sentences, context_length)
-    train_iter = torch.utils.data.DataLoader(
-        train_set, batch_size=batch_size, shuffle=True)
-    return train_iter, train_set.vocab
+def get_gpt_batch(enc_text, context_length, batch_size):
+    """
+    Generate a set of input and target tokens. Stacked together into
+    `batch_size` examples at a time.
+        enc_text: token indices of tokenized text.
+        context_length: context length of gpt model.
+        batch_size: batch size.
+    """
+    ndxs = torch.randint(len(enc_text)-context_length, (batch_size,))
+    xs = torch.stack([torch.tensor(enc_text[ndx:ndx+context_length], dtype=torch.int64) for ndx in ndxs])
+    ys = torch.stack([torch.tensor(enc_text[ndx+1:ndx+1+context_length], dtype=torch.int64) for ndx in ndxs])
+    return (xs, ys)

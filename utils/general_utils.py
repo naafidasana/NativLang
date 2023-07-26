@@ -35,10 +35,10 @@ def setaxes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
 
 
 HUB = dict()
-URL = "https://www.dropbox.com/s/vmdme99s3ymclo7/"
+URL = "https://zenodo.org/record/8186835/files/{file}"
 
 # Add items to HUB
-HUB["dag-sents-train"] = (URL + "dag-sents-train.zip",
+HUB["dag-sents-train"] = (URL.format(file="dag-sents-train.zip"),
                          "456e9cc93e70b79110e7421475z9bcd8d39218ce")
 
 
@@ -166,3 +166,6 @@ class Timer:
     def avg(self):
         """Return the average time elapsed."""
         return self.sum()/len(self.times_elapsed)
+
+#filepath = download_and_extract("dag-sents-train")
+#print(filepath)
