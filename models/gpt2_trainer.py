@@ -104,8 +104,6 @@ def train_gpt(config, model, train_data, learning_rate, num_steps):
         print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
 
 
-
-
 def try_generate(model, max_tokens=10):
     seq = "Di nyɛla bikura shikuru shɛli"
     # Encode sequence
