@@ -49,12 +49,12 @@ class CausalSelfAttention(nn.Module):
 
         # Pass input through key, value and query transforms and transpose
         # for computation of multiple attention heads
-        k = self.k_W(X).reshape(batch_size, seq_length, self.num_heads, -1).permute(0, 2, 3, 1).transpose(1, 2)
+        k = self.k_W(X).reshape(batch_size, seq_length, self.num_heads, -1).permute(0, 2, 3, 1)
         q = self.q_W(X).reshape(batch_size, seq_length, self.num_heads, -1).transpose(1, 2)
         v = self.v_W(X).reshape(batch_size, seq_length, self.num_heads, -1).transpose(1, 2)
 
         d = q.size(-1)
-        attn = (q @ k.transpose(-2, -1)) / math.sqrt(d)
+        attn = (q @ k) / math.sqrt(d)
         mask = self.mask[:, :, :seq_length, :seq_length]
         attn = attn.masked_fill(mask == 0, float("-inf"))
         attn = self.attn_dropout(attn)
