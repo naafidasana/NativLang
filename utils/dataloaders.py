@@ -198,7 +198,7 @@ def encode_sequence_for_gpt(text):
     enc_text = dagpt_tokenizer.encode(text)
     return enc_text
 
-def get_gpt_batch(enc_text, context_length, batch_size):
+def get_gpt_batch(enc_text, context_length, batch_size, device_type="cuda"):
     """
     Generate a set of input and target tokens. Stacked together into
     `batch_size` examples at a time.
@@ -209,4 +209,8 @@ def get_gpt_batch(enc_text, context_length, batch_size):
     ndxs = torch.randint(len(enc_text)-context_length, (batch_size,))
     xs = torch.stack([torch.tensor(enc_text[ndx:ndx+context_length], dtype=torch.int64) for ndx in ndxs])
     ys = torch.stack([torch.tensor(enc_text[ndx+1:ndx+1+context_length], dtype=torch.int64) for ndx in ndxs])
+    if device_type == "cuda":
+        xs, ys = xs.pin_memory(torch.device("cuda"), non_blocking=True), ys.pin_memory(torch.device("cuda"), non_blocking=True)
+    else:
+        xs, ys = xs.to(torch.device("cpu")), ys.to(torch.device("cpu"))
     return (xs, ys)
