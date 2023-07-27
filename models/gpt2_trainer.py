@@ -21,14 +21,11 @@ enc_text = tokenizer.encode(text)
 
 # Get data torch data loaders and vocabulary
 context_length = 128
-batch_size = 128
+batch_size = 16
 
 # Create model config and model
 config = GPTConfig(vocab_size, context_length)
 model = GPTModel(config)
-
-# Get pretreained tokenizer
-tokenizer = BPETokenizer.from_pretrained("configs/dagpt-base-uncased-tokenizer.json")
 
 devices, num_devices = get_gpus()
 
@@ -125,7 +122,3 @@ def try_generate(model, max_tokens=10):
 
 
 print(f"Number of Parameters: {sum([p.numel() for p in model.parameters()])/1e6} M")
-
-# Specify learning rate and num_epochs, and train model
-lr, num_epochs = 3e-5, 50
-train_gpt(config, model, train_data=enc_text, learning_rate=lr, num_steps=num_epochs)

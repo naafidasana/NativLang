@@ -176,6 +176,8 @@ class BPETokenizer:
             if "</w>" in token:
                 encoded_tokens.append(prev_index)
 
+        encoded_tokens = [item if item is not None else self.vocab["<unk>"] for item in encoded_tokens]
+        # Crude fix for encoding returning None for some tokens
         return encoded_tokens
     
     def decode(self, token_ndxs):
