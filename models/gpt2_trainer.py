@@ -52,9 +52,9 @@ def train_gpt(config, model, train_data, learning_rate, num_steps):
         os.mkdir(checkpoint_path)
 
     # Get and move model to device.
-    if num_devices > 0:
+    if num_devices >= 2:
         # Use parallel processing on multiple GPUs.
-        model = nn.DataParallel(model, device_ids=devices).to(devices[0])
+        model = nn.DistributedDataParallel(model, device_ids=devices).to(devices[0])
     else:
         # Still explicitly move model to device incase there is only one GPU.
         model.to(devices[0])
@@ -67,7 +67,7 @@ def train_gpt(config, model, train_data, learning_rate, num_steps):
     print("Training...")
     while step < num_steps:
         # Get batch inputs and targets
-        batch_xs, batch_ys = get_gpt_batch(train_data, config.context_length, batch_size)
+        batch_xs, batch_ys = get_gpt_batch(train_data, config.context_length, batch_size, device_type="cpu")
         
         batch_xs, batch_ys = batch_xs.to(
             devices[0]), batch_ys.to(devices[0])
@@ -88,27 +88,27 @@ def train_gpt(config, model, train_data, learning_rate, num_steps):
         timer.stop()
         visualizer.add(step + 1, metrics[0]/metrics[2])
 
-    step += 1
+        step += 1
 
-    # Save model after every 300 steps
-    # We process `batch_size` number of examples in each step
-    if (step % 300 == 0):
-        checkpoint_name = os.path.join(checkpoint_path, f"dagpt-{step:03}.pth")
-        # Save model
-        torch.save(model.module.state_dict(), checkpoint_name)
+        # Save model after every 300 steps
+        # We process `batch_size` number of examples in each step
+        if (step % 500 == 0):
+            checkpoint_name = os.path.join(checkpoint_path, f"dagpt-{step:03}.pth")
+            # Save model
+            torch.save(model.module.state_dict(), checkpoint_name)
 
-        # Print generated sequence
-        try_generate(model)
+            # Print generated sequence
+            try_generate(model)
 
-        print(f"Loss: {metrics[0]/metrics[2]:.4f}")
-        print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
+            print(f"Loss: {metrics[0]/metrics[2]:.4f}")
+            print(f"{metrics[1]/timer.sum():.1f} tokens/sec on {str(devices)}")
 
 
 def try_generate(model, max_tokens=10):
     seq = "Di nyɛla bikura shikuru shɛli"
     # Encode sequence
     encoded_seq = tokenizer.encode(seq)
-    encoded_seq = torch.tensor(encoded_seq).to(devices[0])
+    encoded_seq = torch.tensor(encoded_seq).to(devices[0]).unsqueeze(0)
     with torch.no_grad():
         try:
             gen_seq = model.module.generate(encoded_seq, max_tokens)
@@ -120,3 +120,4 @@ def try_generate(model, max_tokens=10):
 
 
 print(f"Number of Parameters: {sum([p.numel() for p in model.parameters()])/1e6} M")
+train_gpt(config, model, enc_text, learning_rate=3e-5, num_steps=5)
