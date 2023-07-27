@@ -210,7 +210,7 @@ def get_gpt_batch(enc_text, context_length, batch_size, device_type="cuda"):
     xs = torch.stack([torch.tensor(enc_text[ndx:ndx+context_length], dtype=torch.int64) for ndx in ndxs])
     ys = torch.stack([torch.tensor(enc_text[ndx+1:ndx+1+context_length], dtype=torch.int64) for ndx in ndxs])
     if device_type == "cuda":
-        xs, ys = xs.pin_memory(torch.device("cuda"), non_blocking=True), ys.pin_memory(torch.device("cuda"), non_blocking=True)
+        xs, ys = xs.pin_memory().to(torch.device("cuda"), non_blocking=True), ys.pin_memory().to(torch.device("cuda"), non_blocking=True)
     else:
         xs, ys = xs.to(torch.device("cpu")), ys.to(torch.device("cpu"))
     return (xs, ys)
