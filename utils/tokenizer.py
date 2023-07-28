@@ -185,7 +185,7 @@ class BPETokenizer:
         if self.vocab is None:
             raise ValueError("No tokenizer has been trained yet.")
         tokens = [self.inv_vocab[ndx] if ndx in self.inv_vocab else "<unk>" for ndx in token_ndxs]
-        return " ".join(tokens).replace("</w>", '')
+        return "".join(tokens).replace("</w>", ' ')
 
     def save(self, save_path):
         tokenizer_state = {
