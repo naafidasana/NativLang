@@ -14,18 +14,17 @@ def read_data_for_bert(data_dir):
         lines = f.readlines()
 
     # Convert all uppercase text into lower case
-    paragraphs = [line.strip().lower().split(' . ')
-                for line in lines if len(line.split(' . ')) >= 2]
+    paragraphs = [line.strip().lower().split('.')
+                for line in lines if len(line.split(',')) >= 2]
     random.shuffle(paragraphs)
     return paragraphs
 
 
 def get_tokens_and_segments(tokens_a, tokens_b=None):
     """Get tokens of BERT input sequences and their segment IDs."""
-
     tokens = ['<cls>'] + tokens_a + ['<sep>']
-    segments = [0] * (len(tokens_a)+2)
-    if tokens_b:
+    segments = [0] * (len(tokens_a) + 2)
+    if tokens_b is not None:
         tokens += tokens_b + ['<sep>']
         segments += [1] * (len(tokens_b)+1)
     return tokens, segments
@@ -48,12 +47,13 @@ def get_nsp_data_from_paragraph(paragraph, paragraphs, vocab, context_length):
     nsp_data_from_paragraph = []
     for i in range(len(paragraph)-1):
         tokens_a, tokens_b, is_next = get_next_sentence(
-            paragraph, paragraph[i+1], paragraphs
+            paragraph[i], paragraph[i+1], paragraphs
         )
         # Consider 1 `<cls>` token and 2 `<sep>` tokens
         if len(tokens_a) + len(tokens_b) + 3 > context_length:
-            tokens, segments = get_tokens_and_segments(tokens_a, tokens_b)
-            nsp_data_from_paragraph.append((tokens, segments, is_next))
+            continue
+        tokens, segments = get_tokens_and_segments(tokens_a, tokens_b)
+        nsp_data_from_paragraph.append((tokens, segments, is_next))
     return nsp_data_from_paragraph
 
 
@@ -63,6 +63,7 @@ def replace_mlm_tokens(tokens, candidate_pred_positions, num_mlm_preds, vocab):
     pred_positions_and_labels = []
 
     # Shuffle to get 15% random tokens for prediction in mlm
+    random.shuffle(candidate_pred_positions)
     for mlm_pred_position in candidate_pred_positions:
         if len(pred_positions_and_labels) >= num_mlm_preds:
             break
@@ -115,7 +116,8 @@ def pad_bert_inputs(examples, context_length, vocab):
             context_length - len(token_ids)), dtype=torch.long))
         all_segments.append(torch.tensor(segments + [0] * (
             context_length - len(segments)), dtype=torch.long))
-        # attn_mask excludes count of <pad> tokens
+        
+        # attn_mask excludes count of <PAD> tokens
         attn_mask.append(torch.tensor(len(token_ids), dtype=torch.float32))
         all_pred_positions.append(torch.tensor(pred_positions + [0] * (
             max_num_mlm_preds - len(pred_positions)), dtype=torch.long))
@@ -127,7 +129,8 @@ def pad_bert_inputs(examples, context_length, vocab):
         all_mlm_labels.append(torch.tensor(mlm_pred_label_ids + [0] * (
             max_num_mlm_preds - len(mlm_pred_label_ids)), dtype=torch.long))
         nsp_labels.append(torch.tensor(is_next, dtype=torch.long))
-        return (all_token_ids, all_segments, attn_mask, all_pred_positions,
+
+    return (all_token_ids, all_segments, attn_mask, all_pred_positions,
                 all_mlm_weights, all_mlm_labels, nsp_labels)
 
 
@@ -165,7 +168,7 @@ class DatasetForBertModel(torch.utils.data.Dataset):
             self.all_token_ids[ndx], self.all_segments[ndx],
             self.attn_mask[ndx], self.all_pred_positions[ndx],
             self.all_mlm_weights[ndx], self.all_mlm_labels[ndx],
-            self.nsp_labels[ndx]
+            self.all_nsp_labels[ndx]
 
         )
 

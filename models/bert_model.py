@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import math
 from dataclasses import dataclass
 
+import os
+
 
 @dataclass
 class BertConfig:
@@ -13,8 +15,8 @@ class BertConfig:
     dropout: float = 0.0
     ffn_num_inputs: int = 768
     ffn_hidden_dim: int = 768
-    hidden_dim: int = 1024
-    norm_shape: int = 1024
+    hidden_dim: int = 768
+    norm_shape: int = 768
     kqv_size: int = 768
     num_blocks: int = 12
     bias: bool = False
@@ -32,7 +34,7 @@ class DotProductAttention(nn.Module):
 
     def __init__(self, config, **kwargs):
         super(DotProductAttention, self).__init__(**kwargs)
-        self.dropout = config.dropout
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, keys, queries, values, attn_mask=None):
         # Shape of queries: (`batch_size`, `no. of queries`, d)
@@ -43,7 +45,7 @@ class DotProductAttention(nn.Module):
         self.attn_weights = self.masked_softmax(scores, attn_mask)
         return self.dropout(self.attn_weights) @ values
 
-    def masked_softamx(self, X, attn_mask):
+    def masked_softmax(self, X, attn_mask):
         if attn_mask is None:
             return F.softmax(X, dim=-1)
         else:
@@ -84,7 +86,7 @@ class MultiheadAttention(nn.Module):
         queries = self.transpose_for_mltha(self.q_W(queries), self.num_heads)
         values = self.transpose_for_mltha(self.v_W(values), self.num_heads)
 
-        if attn_mask:
+        if attn_mask is not None:
             attn_mask = torch.repeat_interleave(
                 attn_mask, repeats=self.num_heads, dim=0
             )
@@ -163,13 +165,13 @@ class BERTEncoder(nn.Module):
             self.enc_blks.add_module(str(i), EncoderBlock(config))
 
         self.pos_encodings = nn.Parameter(torch.randn(
-            1, config.context_length, config.hidden_dim
+            1, config.context_length, config.embed_dim
         ))
 
     def forward(self, tokens, segments, attn_mask):
         # Shape of X: (`batch_size`, `context_length`, `hidden_dim`)
         X = self.token_embeddings(tokens) + self.segment_embeddings(segments)
-        X += self.pos_encodings.data[:, :, X.shape[1], :]
+        X += self.pos_encodings.data[:, :X.shape[1], :]
 
         for blk in self.enc_blks:
             X = blk(X, attn_mask)
@@ -191,7 +193,7 @@ class Masked_LM(nn.Module):
 
     def forward(self, X, pred_positions):
         num_pred_positions = pred_positions.shape[1]
-        pred_positions = pred_positions.reshape[-1]
+        pred_positions = pred_positions.reshape(-1)
         batch_size = X.shape[0]
         batch_ndx = torch.arange(0, batch_size)
         batch_ndx = torch.repeat_interleave(batch_ndx, num_pred_positions)
@@ -240,12 +242,12 @@ class BERTModel(nn.Module):
         return X_encoded, mlm_Y_hat, nsp_Y_hat
 
     @classmethod
-    def from_pretrained(cls, config, checkpoint=None):
-        """Load weights from checkpoint"""
-        if checkpoint is None:
-            raise ValueError(
-                f"Got {checkpoint} for argument `checkpoint`. Provide path to saved checkpoint.")
-        else:
-            model = cls(config)
-            model.load_state_dict(checkpoint)
+    def from_pretrained(cls, name, config):
+        # Create instance of model
+        model = cls(config)
+
+        # Get checkpoint path and load pretrained model.
+        checkpoint_path = os.path.join("./checkpoints", f"{name}.pth")
+        model.load_state_dict(torch.load(checkpoint_path))
+        
         return model

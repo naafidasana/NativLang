@@ -18,7 +18,7 @@ class Vocabulary:
         self._token_freqs = sorted(
             token_counts.items(), key=lambda x: x[1], reverse=True)
 
-        self.ndx_to_token = ['<unk>'] + reserved_tokens
+        self.ndx_to_token = ['<UNK>'] + reserved_tokens
         self.token_to_ndx = {
             token: ndx for ndx, token in enumerate(self.ndx_to_token)
         }
@@ -56,11 +56,8 @@ class Vocabulary:
         return self._token_freqs
 
 
-def tokenize(lines: list, method="word"):
+def tokenize(lines, method="word"):
     """Break sentences down into a list of tokens."""
-    if not isinstance(lines, (list, tuple)):
-        lines = [lines]
-
     if method == "word":
         tokens = [line.lower().split() for line in lines]
     elif method == "char":
