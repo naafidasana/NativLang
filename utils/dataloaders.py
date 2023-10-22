@@ -13,15 +13,17 @@ from utils.tokenizer import Vocabulary, BPETokenizer, tokenize
 def read_data_for_bert(data_dir):
     file_name = os.path.join(data_dir, "dag-sents-train.txt")
     with open(file_name, "r", encoding="utf-8") as f:
-        lines = f.read()
-        # add spaces between words and punctuation marks.
-        lines = ' '.join([word[:-1] + " " + word[-1] if word[-1] in string.punctuation else word for word in lines])
+        lines = f.readlines()
+    
+    # Add spaces between words and punctuation marks.
+    lines = [' '.join([word[:-1] + " " + word[-1] if word[-1] in string.punctuation else word for word in line.split()]) for line in lines]
 
     # Convert all uppercase text into lower case
     paragraphs = [line.strip().lower().split('.')
-                for line in lines if len(line.split(',')) >= 2]
+                  for line in lines if len(line.split(',')) >= 2]
     random.shuffle(paragraphs)
     return paragraphs
+
 
 
 def get_tokens_and_segments(tokens_a, tokens_b=None):
