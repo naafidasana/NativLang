@@ -1,3 +1,5 @@
+import string
+
 import random
 import os
 
@@ -12,6 +14,8 @@ def read_data_for_bert(data_dir):
     file_name = os.path.join(data_dir, "dag-sents-train.txt")
     with open(file_name, "r", encoding="utf-8") as f:
         lines = f.readlines()
+        # add spaces between words and punctuation marks.
+        lines = ' '.join([word[:-1] + " " + word[-1] if word[-1] in string.punctuation else word for word in lines])
 
     # Convert all uppercase text into lower case
     paragraphs = [line.strip().lower().split('.')
