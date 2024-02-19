@@ -43,5 +43,3 @@ Contributions to this project are welcome! If you would like to contribute, plea
 ## Contact
 
 For any inquiries or questions, please contact [ibrahimnaafi@gmail.com](mailto:ibrahimnaafi@.com).
-
-Feel free to customize the sections, add more information, or provide any additional details that are relevant to your project. The README serves as a starting point for users to understand your project's purpose, structure, and usage.
